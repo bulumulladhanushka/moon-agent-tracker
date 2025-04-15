@@ -30,23 +30,23 @@ jobs:
     - name: Build and push Agent Service image
       uses: docker/build-push-action@v5
       with:
-        context: ./agent-service
+        context: ./agent_service
         push: true
-        tags: ${{ env.DOCKER_REPO }}/agent-service:latest
+        tags: ${{ env.DOCKER_REPO }}/agent_service:latest
 
     - name: Build and push Integration Service image
       uses: docker/build-push-action@v5
       with:
-        context: ./integration-service
+        context: ./integration_service
         push: true
-        tags: ${{ env.DOCKER_REPO }}/integration-service:latest
+        tags: ${{ env.DOCKER_REPO }}/integration_service:latest
 
     - name: Build and push Notification Service image
       uses: docker/build-push-action@v5
       with:
-        context: ./notification-service
+        context: ./notification_service
         push: true
-        tags: ${{ env.DOCKER_REPO }}/notification-service:latest
+        tags: ${{ env.DOCKER_REPO }}/notification_service:latest
 
   # Future job: Deploy to EKS using Blue-Green strategy
   # deploy:
