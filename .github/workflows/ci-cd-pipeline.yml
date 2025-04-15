@@ -21,6 +21,8 @@ jobs:
     # Login to Amazon ECR
     - name: Log in to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
+      with:
+        region: us-east-1  # Specify your AWS region here
 
     # Build and push Agent Service image to ECR
     - name: Build and push Agent Service image
