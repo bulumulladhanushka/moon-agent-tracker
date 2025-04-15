@@ -3,34 +3,48 @@ name: Build and Deploy to ECR
 on:
   push:
     branches:
-      - dev  # You can change this to any branch that you want to trigger the pipeline from
+      - dev  
 
 jobs:
-  build:
-    runs-on: ubuntu-latest  # This specifies the environment where your pipeline will run
+  build_and_push:
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2  # Checks out the repository so the workflow can access it
+    # Checkout the code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v2
 
+    # Set up Docker Buildx
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2  # Set up Docker Buildx, which enables multi-platform builds
+      uses: docker/setup-buildx-action@v2
 
-    - name: Cache Docker layers
-      uses: actions/cache@v2  # Caches Docker layers to speed up the build process
-      with:
-        path: ~/.cache/docker
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-
+    # Login to Amazon ECR
     - name: Log in to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v1  # Logs into ECR using your AWS credentials
+      uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build and Push Docker image
-      run: |
-        # Build the Docker image using the Dockerfile in the repository
-        docker build -t ${{ secrets.ECR_REPO_URI }}:latest .
+    # Build and push Agent Service image to ECR
+    - name: Build and push Agent Service image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./agent_service  # Path to the agent service folder
+        push: true
+        tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:latest
 
-        # Push the Docker image to ECR
-        docker push ${{ secrets.ECR_REPO_URI }}:latest
+    # Build and push Integration Service image to ECR
+    - name: Build and push Integration Service image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./integration_service  # Path to the integration service folder
+        push: true
+        tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:latest
+
+    # Build and push Notification Service image to ECR
+    - name: Build and push Notification Service image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./notification_service  # Path to the notification service folder
+        push: true
+        tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:latest
+
+  # Future job: Deploy to EKS using Blue-Green strategy
+  # deploy:
