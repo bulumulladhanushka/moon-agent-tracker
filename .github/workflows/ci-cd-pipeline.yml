@@ -18,11 +18,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    # Login to Amazon ECR
+    # Log in to Amazon ECR
     - name: Log in to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
-      with:
-        region: us-east-1  # Specify your AWS region here
+      env:
+        AWS_REGION: us-east-1  # Set the AWS region here
 
     # Build and push Agent Service image to ECR
     - name: Build and push Agent Service image
