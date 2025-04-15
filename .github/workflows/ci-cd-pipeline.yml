@@ -1,0 +1,44 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev  # Trigger this pipeline when changes are pushed to the dev branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: bulumulladhanu
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push agent-service Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./agent_service
+          push: true
+          tags: bulumulladhanu/agent-service:latest
+
+      - name: Build and push integration-service Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./integration_service
+          push: true
+          tags: bulumulladhanu/integration-service:latest
+
+      - name: Build and push notification-service Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./notification_service
+          push: true
+          tags: bulumulladhanu/notification-service:latest
