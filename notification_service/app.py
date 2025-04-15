@@ -8,59 +8,65 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Database configuration from environment variables
-db_config = {
-    'user': os.environ.get('DB_USERNAME'),
-    'password': os.environ.get('DB_PASSWORD'),
-    'host': os.environ.get('DB_HOST'),
-    'database': os.environ.get('DB_NAME'),
-    'port': int(os.environ.get('DB_PORT', 3306))
-}
+DB_HOST = "mooninsurance.ca7isqgecjpt.us-east-1.rds.amazonaws.com"
+DB_PORT = 3306
+DB_NAME = "mooninsurance_db"
+DB_USERNAME = "admin"
+DB_PASSWORD = "Hsnmef_9575$"
+
+def create_db_connection():
+    try:
+        connection = mysql.connector.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USERNAME,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        return connection
+    except mysql.connector.Error as e:
+        print(f"Error connecting to MySQL: {e}")
+        return None
 
 @app.route('/')
 def home():
     print("Home route hit")
-    return "Welcome to the Integration Service!"
+    return "Welcome to the Notification Service!"
 
 @app.route('/target-reminder', methods=['POST'])
 def send_target_reminder():
-    data = request.get_json(force=True)
-    print("Received target reminder request:", data)
+    data = request.get_json()
+    print(f"Received target reminder request: {data}")
+    agent_code = data.get("agent_code")
+    target_sales = data.get("target_sales")
 
-    required_fields = ['agent_code', 'target_sales']
-    if not all(field in data and data[field] for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+    connection = create_db_connection()
+    if not connection:
+        return jsonify({"error": "Failed to connect to database"}), 500
 
     try:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+        cursor = connection.cursor(dictionary=True)
+        query = "SELECT name, email FROM agent WHERE agent_code = %s"
+        cursor.execute(query, (agent_code,))
+        result = cursor.fetchone()
 
-        # Check if agent exists
-        cursor.execute("SELECT agent_id FROM agent WHERE agent_code = %s", (data['agent_code'],))
-        agent_result = cursor.fetchone()
+        if not result:
+            return jsonify({"error": "Agent not found"}), 404
 
-        if not agent_result:
-            return jsonify({"error": "Agent code not found"}), 404
+        agent_name = result["name"]
+        email = result["email"]
 
-        # Fetch total sales using agent_code
-        cursor.execute("""
-            SELECT SUM(sale_amount)
-            FROM sales
-            WHERE agent_code = %s
-        """, (data['agent_code'],))
-        total_sales = cursor.fetchone()[0] or 0
+        # Mock notification logic
+        print(f"Sending reminder to {agent_name} ({email}) about target: {target_sales}")
 
-        if total_sales >= data['target_sales']:
-            return jsonify({"message": f"Agent {data['agent_code']} has achieved the sales target of {data['target_sales']}!"}), 200
-        else:
-            return jsonify({"message": f"Agent {data['agent_code']} has not met the sales target. Current sales: {total_sales}."}), 200
+        return jsonify({"message": f"Reminder sent to {agent_name} ({email})"}), 200
 
-    except mysql.connector.Error as err:
-        return jsonify({"error": str(err)}), 500
+    except mysql.connector.Error as e:
+        print(f"Query error: {e}")
+        return jsonify({"error": "Database query failed"}), 500
 
     finally:
         if connection.is_connected():
-            cursor.close()
             connection.close()
 
 if __name__ == '__main__':

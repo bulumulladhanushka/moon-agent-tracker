@@ -1,73 +1,108 @@
 from flask import Flask, request, jsonify
 import mysql.connector
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 app = Flask(__name__)
 
-# Database config
-db_config = {
-    'user': os.environ.get('DB_USERNAME'),
-    'password': os.environ.get('DB_PASSWORD'),
-    'host': os.environ.get('DB_HOST'),
-    'database': os.environ.get('DB_NAME'),
-    'port': int(os.environ.get('DB_PORT', 3306))
-}
+# MySQL connection
+def get_db_connection():
+    connection = mysql.connector.connect(
+    host='mooninsurance.ca7isqgecjpt.us-east-1.rds.amazonaws.com',
+    port=3306,
+    user='admin',
+    password='Hsnmef_9575$',
+    database='mooninsurance_db'
 
-@app.route('/')
-def home():
-    print("Home route hit")
-    return "Welcome to the Integration Service!"
+    )
+    return connection
 
-@app.route('/agents', methods=['POST'])
+@app.route('/agent', methods=['POST'])
 def create_agent():
-    data = request.get_json(force=True)
-    print("Received data:", data)
+    data = request.get_json()
+    email = data.get('email')
+    name = data.get('name')
+    phone = data.get('phone')
+    region = data.get('region')
+    status = data.get('status')
 
-    print("🚀 Starting Agent Onboarding")
-    required_fields = ['name', 'email', 'phone', 'region', 'status']
-    if not all(field in data and data[field] for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+    if not email or not name or not phone or not region or not status:
+        return jsonify({"error": "All fields are required"}), 400
 
-    try:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        INSERT INTO agent (email, name, phone, region, status)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (email, name, phone, region, status))
+    connection.commit()
+    connection.close()
 
-        # Insert new agent (auto-generates agent_code via trigger)
-        insert_query = """
-            INSERT INTO agent (name, email, phone, region, status)
-            VALUES (%s, %s, %s, %s, %s)
-        """
-        values = (data['name'], data['email'], data['phone'], data['region'], data['status'])
-        cursor.execute(insert_query, values)
-        connection.commit()
+    return jsonify({"message": "Agent created successfully"}), 201
 
-        agent_id = cursor.lastrowid
+@app.route('/agent', methods=['GET'])
+def get_agent():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"error": "Email parameter is required"}), 400
 
-        # Fetch agent_code using agent_id
-        print(f"Executing query: SELECT agent_code FROM agent WHERE agent_id = {agent_id}")  #change 1
-        cursor.execute("SELECT agent_code FROM agent WHERE agent_id = %s", (agent_id,))
-        agent_code_result = cursor.fetchone()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM agent WHERE email = %s", (email,))
+    agent = cursor.fetchone()
+    connection.close()
 
-        if agent_code_result:
-            return jsonify({
-                "message": "Agent created successfully",
-                "agent_id": agent_id,
-                "agent_code": agent_code_result[0]
-            }), 201
-        else:
-            return jsonify({"error": "Agent created but agent_code not found"}), 500
+    if agent:
+        return jsonify({
+            "agent_id": agent[0],
+            "agent_code": agent[1],
+            "name": agent[2],
+            "email": agent[3],
+            "phone": agent[4],
+            "region": agent[5],
+            "status": agent[6],
+            "created_at": agent[7]
+        })
+    else:
+        return jsonify({"error": "Agent not found"}), 404
 
-    except mysql.connector.Error as err:
-        return jsonify({"error": str(err)}), 500
+@app.route('/agent', methods=['PUT'])
+def update_agent():
+    data = request.get_json()
 
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
+    agent_id = data.get('agent_id')
+    email = data.get('email')
+    name = data.get('name')
+    phone = data.get('phone')
+    region = data.get('region')
+    status = data.get('status')
+
+    if not agent_id or not email or not name or not phone or not region or not status:
+        return jsonify({"error": "All fields are required"}), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        UPDATE agent
+        SET name = %s, email = %s, phone = %s, region = %s, status = %s
+        WHERE agent_id = %s
+    """, (name, email, phone, region, status, agent_id))
+    connection.commit()
+    connection.close()
+
+    return jsonify({"message": "Agent updated successfully"})
+
+@app.route('/agent', methods=['DELETE'])
+def delete_agent():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"error": "Email parameter is required"}), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM agent WHERE email = %s", (email,))
+    connection.commit()
+    connection.close()
+
+    return jsonify({"message": "Agent deleted successfully"})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5000)

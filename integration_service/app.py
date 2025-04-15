@@ -2,12 +2,15 @@ import os
 from flask import Flask, request, jsonify
 import mysql.connector
 from mysql.connector import Error
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 app = Flask(__name__)
+
+
+DB_HOST = "mooninsurance.ca7isqgecjpt.us-east-1.rds.amazonaws.com"
+DB_PORT = 3306
+DB_NAME = "mooninsurance_db"
+DB_USERNAME = "admin"
+DB_PASSWORD = "Hsnmef_9575$"
 
 @app.route('/')
 def home():
@@ -25,11 +28,11 @@ def create_sale():
 
     try:
         connection = mysql.connector.connect(
-            host=os.getenv('DB_HOST'),
-            user=os.getenv('DB_USERNAME'),
-            password=os.getenv('DB_PASSWORD'),
-            database=os.getenv('DB_NAME'),
-            port=int(os.getenv('DB_PORT', 3306))
+            host=DB_HOST,
+            user=DB_USERNAME,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            port=DB_PORT
         )
 
         if connection.is_connected():
@@ -64,4 +67,4 @@ def create_sale():
             connection.close()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5002,debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
