@@ -10,8 +10,6 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: 457087769533
-  ECR_URL: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
 jobs:
   build:
@@ -22,32 +20,31 @@ jobs:
 
       - name: Login to AWS ECR
         uses: aws-actions/amazon-ecr-login@v1
-        with:
-          region: ${{ secrets.AWS_REGION }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
 
       - name: Build and push Agent Service image
         uses: docker/build-push-action@v5
         with:
           context: ./agent_service
           push: true
-          tags: ${{ env.ECR_URL }}/moon-agent-service:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:latest
 
       - name: Build and push Integration Service image
         uses: docker/build-push-action@v5
         with:
           context: ./integration_service
           push: true
-          tags: ${{ env.ECR_URL }}/moon-integration-service:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:latest
 
       - name: Build and push Notification Service image
         uses: docker/build-push-action@v5
         with:
           context: ./notification_service
           push: true
-          tags: ${{ env.ECR_URL }}/moon-notification-service:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:latest
 
   # Future job: Deploy to EKS using Blue-Green strategy
   # deploy:
