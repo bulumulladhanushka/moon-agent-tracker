@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service-blue
+  labels:
+    app: agent-service
+    version: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agent-service
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: agent-service
+        version: blue
+    spec:
+      containers:
+        - name: agent-service
+          image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:blue # use specific blue image tag
+          ports:
+            - containerPort: 5000

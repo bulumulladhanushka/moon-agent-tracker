@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-service-green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-service
+      version: green
+  template:
+    metadata:
+      labels:
+        app: integration-service
+        version: green
+    spec:
+      containers:
+      - name: integration-service
+        image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:green
+        ports:
+        - containerPort: 5000

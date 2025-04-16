@@ -5,8 +5,9 @@ metadata:
 spec:
   selector:
     app: notification-service
+    version: blue  # ← You can switch this to "green" when you want to switch traffic
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 5000
-  type: ClusterIP
+      targetPort: 5003
+  type: LoadBalancer

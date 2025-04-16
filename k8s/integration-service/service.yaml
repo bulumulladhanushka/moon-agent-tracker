@@ -5,8 +5,8 @@ metadata:
 spec:
   selector:
     app: integration-service
+    version: blue  # Initially selects blue version
   ports:
-    - protocol: TCP
-      port: 80
+    - port: 80
       targetPort: 5000
-  type: ClusterIP
+  type: LoadBalancer
