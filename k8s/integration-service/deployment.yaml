@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-service
+  template:
+    metadata:
+      labels:
+        app: integration-service
+    spec:
+      containers:
+      - name: integration-service
+        image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:latest
+        ports:
+        - containerPort: 5000
