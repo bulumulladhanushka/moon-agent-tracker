@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: moon-agent-service
 spec:
+  type: LoadBalancer
   selector:
     app: moon-agent-service
   ports:
     - protocol: TCP
       port: 80
       targetPort: 5000
-  type: ClusterIP

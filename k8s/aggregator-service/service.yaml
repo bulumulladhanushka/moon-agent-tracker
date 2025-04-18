@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: aggregator-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: aggregator-service
     version: blue
   ports:
-  - port: 5004
-    targetPort: 5004
-    protocol: TCP
+    - port: 5004
+      targetPort: 5004
+      protocol: TCP
