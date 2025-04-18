@@ -10,83 +10,72 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REGISTRY: 457087769533.dkr.ecr.us-east-1.amazonaws.com
-  CLUSTER_NAME: mooninsurance-ekscluster
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read                    # for actions/checkout
+      id-token: write                   # if you switch to OIDC later
+      pull-requests: write              # optional
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-region: ${{ env.AWS_REGION }}
-          # if you’re assuming a role, set role-to-assume
-          # role-to-assume: arn:aws:iam::457087769533:role/YourGithubActionsRole
-          # role-session-name: GitHubActions
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & push Agent Service images
+      - name: Build & push Agent Service (blue/green)
         uses: docker/build-push-action@v5
         with:
           context: ./agent-service
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/moon-agent-service:blue
-            ${{ env.ECR_REGISTRY }}/moon-agent-service:green
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:blue
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:green
 
-      - name: Build & push Integration Service images
+      - name: Build & push Integration Service (blue/green)
         uses: docker/build-push-action@v5
         with:
           context: ./integration-service
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/moon-integration-service:blue
-            ${{ env.ECR_REGISTRY }}/moon-integration-service:green
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:blue
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:green
 
-      - name: Build & push Notification Service images
+      - name: Build & push Notification Service (blue/green)
         uses: docker/build-push-action@v5
         with:
           context: ./notification-service
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/moon-notification-service:blue
-            ${{ env.ECR_REGISTRY }}/moon-notification-service:green
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:blue
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:green
 
-      - name: Build & push Aggregator Service images
+      - name: Build & push Aggregator Service (blue/green)
         uses: docker/build-push-action@v5
         with:
           context: ./aggregator-service
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/moon-aggregator-service:blue
-            ${{ env.ECR_REGISTRY }}/moon-aggregator-service:green
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          # role-to-assume: arn:aws:iam::457087769533:role/YourGithubActionsRole
-          # role-session-name: GitHubActionsDeploy
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:blue
+            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:green
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
-
-      - name: Deploy to EKS (Blue‑Green)
         run: |
-          kubectl apply --server-side --force-conflicts -f k8s/agent-service
-          kubectl apply --server-side --force-conflicts -f k8s/integration-service
-          kubectl apply --server-side --force-conflicts -f k8s/notification-service
-          kubectl apply --server-side --force-conflicts -f k8s/aggregator-service
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          kubectl apply -f k8s/agent-service
+          kubectl apply -f k8s/integration-service
+          kubectl apply -f k8s/notification-service
+          kubectl apply -f k8s/aggregator-service
