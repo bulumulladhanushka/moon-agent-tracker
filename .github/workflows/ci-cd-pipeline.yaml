@@ -27,41 +27,37 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Build & push agent-service images
       - name: Build & push Agent Service (Blue/Green)
         uses: docker/build-push-action@v5
         with:
-          context: ./agent-service
+          context: ./agent_service          # <— use underscore here
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-agent-service:blue
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-agent-service:green
 
-      # Build & push integration-service images
       - name: Build & push Integration Service (Blue/Green)
         uses: docker/build-push-action@v5
         with:
-          context: ./integration-service
+          context: ./integration_service    # <— underscore
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-integration-service:blue
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-integration-service:green
 
-      # Build & push notification-service images
       - name: Build & push Notification Service (Blue/Green)
         uses: docker/build-push-action@v5
         with:
-          context: ./notification-service
+          context: ./notification_service   # <— underscore
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-notification-service:blue
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-notification-service:green
 
-      # **New**: Build & push aggregator-service images
       - name: Build & push Aggregator Service (Blue/Green)
         uses: docker/build-push-action@v5
         with:
-          context: ./aggregator-service
+          context: ./aggregator-service     # this one is dash, as your folder is named
           push: true
           tags: |
             ${{ env.ECR_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/moon-aggregator-service:blue
