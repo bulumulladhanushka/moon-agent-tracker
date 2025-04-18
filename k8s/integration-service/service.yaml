@@ -1,12 +1,37 @@
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"integration-service","namespace":"default"},"spec":{"ports":[{"port":5000,"protocol":"TCP","targetPort":5002}],"selector":{"app":"integration-service","version":"green"},"type":"LoadBalancer"}}
+  creationTimestamp: "2025-04-18T07:33:18Z"
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
   name: integration-service
+  namespace: default
+  resourceVersion: "518674"
+  uid: eeb9ba57-3ff8-468c-8276-9823ada9824f
 spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.100.211.201
+  clusterIPs:
+  - 10.100.211.201
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 30556
+    port: 5000
+    protocol: TCP
+    targetPort: 5002
   selector:
     app: integration-service
-    version: blue  # Initially selects blue version
-  ports:
-    - port: 80
-      targetPort: 5000
+    version: green
+  sessionAffinity: None
   type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - hostname: aeeb9ba573ff8468c82769823ada9824-7620666.us-east-1.elb.amazonaws.com

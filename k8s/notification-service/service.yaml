@@ -1,13 +1,37 @@
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"notification-service","namespace":"default"},"spec":{"ports":[{"port":5003,"protocol":"TCP","targetPort":5003}],"selector":{"app":"notification-service","version":"green"},"type":"LoadBalancer"}}
+  creationTimestamp: "2025-04-18T09:47:14Z"
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
   name: notification-service
+  namespace: default
+  resourceVersion: "527169"
+  uid: c0157570-f7c3-4114-b7e3-f8e99d8aacee
 spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.100.68.148
+  clusterIPs:
+  - 10.100.68.148
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 30328
+    port: 5003
+    protocol: TCP
+    targetPort: 5003
   selector:
     app: notification-service
-    version: blue  # ← You can switch this to "green" when you want to switch traffic
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 5003
+    version: green
+  sessionAffinity: None
   type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - hostname: ac0157570f7c34114b7e3f8e99d8aace-1911492619.us-east-1.elb.amazonaws.com

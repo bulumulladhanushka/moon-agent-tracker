@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aggregator-service-cronjob
+spec:
+  schedule: "0 0 * * *"   # daily at 00:00
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: aggregator-runner
+            image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:green
+            command: ["python", "app.py"]
+            env:
+            - name: DB_HOST
+              value: "mooninsurance.ca7isqgecjpt.us-east-1.rds.amazonaws.com"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "mooninsurance_db"
+            - name: DB_USER
+              value: "admin"
+            - name: DB_PASS
+              value: "Hsnmef_9575$"
+          restartPolicy: OnFailure
