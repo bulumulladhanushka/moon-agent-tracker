@@ -15,11 +15,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read                    # for actions/checkout
-      id-token: write                   # if you switch to OIDC later
-      pull-requests: write              # optional
+      contents: read
+      id-token: write
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -73,7 +71,7 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
 
-      - name: Apply Kubernetes Manifests
+      - name: Deploy to EKS
         run: |
           kubectl apply -f k8s/agent-service
           kubectl apply -f k8s/integration-service
