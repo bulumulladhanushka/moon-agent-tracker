@@ -10,6 +10,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  ECR_ACCOUNT_URL: 457087769533.dkr.ecr.us-east-1.amazonaws.com
 
 jobs:
   build:
@@ -21,69 +22,67 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build & push Agent Service images
+      - name: Build & push Agent Service image
         uses: docker/build-push-action@v5
         with:
           context: ./agent_service
           push: true
-          tags: |
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:blue
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:green
+          tags: ${{ env.ECR_ACCOUNT_URL }}/moon-agent-service:latest
 
-      - name: Build & push Integration Service images
+      - name: Build & push Integration Service image
         uses: docker/build-push-action@v5
         with:
           context: ./integration_service
           push: true
-          tags: |
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:blue
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:green
+          tags: ${{ env.ECR_ACCOUNT_URL }}/moon-integration-service:latest
 
-      - name: Build & push Notification Service images
+      - name: Build & push Notification Service image
         uses: docker/build-push-action@v5
         with:
           context: ./notification_service
           push: true
-          tags: |
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:blue
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:green
+          tags: ${{ env.ECR_ACCOUNT_URL }}/moon-notification-service:latest
 
-      - name: Build & push Aggregator Service images
+      - name: Build & push Aggregator Service image
         uses: docker/build-push-action@v5
         with:
           context: ./aggregator-service
           push: true
-          tags: |
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:blue
-            457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:green
+          tags: ${{ env.ECR_ACCOUNT_URL }}/moon-aggregator-service:latest
 
   deploy:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
-  
-      - name: Update kubeconfig for EKS
-        run: |
-          aws eks update-kubeconfig \
-            --region ${{ env.AWS_REGION }} \
-            --name mooninsurance-ekscluster
-  
-      - name: Deploy to EKS blue/green
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
+
+      - name: Deploy to EKS (Blue/Green)
         run: |
           kubectl apply -f k8s/agent-service
           kubectl apply -f k8s/integration-service
           kubectl apply -f k8s/notification-service
           kubectl apply -f k8s/aggregator-service
+          kubectl apply -f k8s/aggregator-service/cronjob.yaml
