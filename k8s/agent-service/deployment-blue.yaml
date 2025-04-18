@@ -1,24 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agent-service-blue
+  name: moon-agent-service-blue
   labels:
-    app: agent-service
+    app: moon-agent-service
     version: blue
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: agent-service
+      app: moon-agent-service
       version: blue
   template:
     metadata:
       labels:
-        app: agent-service
+        app: moon-agent-service
         version: blue
     spec:
       containers:
-        - name: agent-service
-          image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:blue # use specific blue image tag
+        - name: moon-agent-service
+          image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:latest
           ports:
             - containerPort: 5000
+          env:
+            - name: MYSQL_HOST
+              value: "mooninsurance.ca7isqgecjpt.us-east-1.rds.amazonaws.com"
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_USER
+              value: "admin"
+            - name: MYSQL_PASSWORD
+              value: "Hsnmef_9575$"
+            - name: MYSQL_DB
+              value: "mooninsurance_db"
