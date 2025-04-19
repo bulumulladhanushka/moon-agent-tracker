@@ -65,11 +65,14 @@ rows = rds_cursor.fetchall()
 # === Transform and Insert into Redshift ===
 insert_query = """
 INSERT INTO product_vs_target (
+    agent_code,
+    name,
+    region,
     product_id,
     product_name,
-    actual_sales,
-    target_sales,
-    performance_ratio,
+    month,
+    total_sales,
+    product_target,
     target_month,
     recorded_at
 ) VALUES %s
@@ -77,19 +80,19 @@ INSERT INTO product_vs_target (
 
 data = []
 for row in rows:
-    performance_ratio = (
-        (float(row['total_sales']) / float(row['product_target']))
-        if float(row['product_target']) > 0 else 0
-    )
     data.append((
+        row['agent_code'],
+        row['name'],
+        row['region'],
         row['product_id'],
         row['product_name'],
+        row['month'],
         float(row['total_sales']),
         float(row['product_target']),
-        round(performance_ratio, 2),
         row['target_month'],
         datetime.utcnow()
     ))
+
 
 if data:
     execute_values(redshift_cursor, insert_query, data)
