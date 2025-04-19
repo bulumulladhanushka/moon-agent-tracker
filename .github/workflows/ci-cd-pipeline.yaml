@@ -9,59 +9,61 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPO_AGENT: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service
-  ECR_REPO_INTEGRATION: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service
-  ECR_REPO_NOTIFICATION: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service
-  ECR_REPO_AGGREGATOR: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service
 
 jobs:
-  build:
+  build-and-push:
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Login to AWS ECR
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build & Push Agent Service
+      - name: Build and push Agent Service image
         uses: docker/build-push-action@v5
         with:
           context: ./agent_service
           push: true
-          tags: ${{ env.ECR_REPO_AGENT }}:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:blue,457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-agent-service:green
 
-      - name: Build & Push Integration Service
+      - name: Build and push Integration Service image
         uses: docker/build-push-action@v5
         with:
           context: ./integration_service
           push: true
-          tags: ${{ env.ECR_REPO_INTEGRATION }}:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:blue,457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-integration-service:green
 
-      - name: Build & Push Notification Service
+      - name: Build and push Notification Service image
         uses: docker/build-push-action@v5
         with:
           context: ./notification_service
           push: true
-          tags: ${{ env.ECR_REPO_NOTIFICATION }}:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:blue,457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-notification-service:green
 
-      - name: Build & Push Aggregator Service
+      - name: Build and push Aggregator Service image
         uses: docker/build-push-action@v5
         with:
           context: ./aggregator-service
           push: true
-          tags: ${{ env.ECR_REPO_AGGREGATOR }}:latest
+          tags: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:blue,457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:green
 
-  deploy-test:
+  deploy-to-test:
     if: github.ref == 'refs/heads/test'
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -71,22 +73,21 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
 
-      - name: Deploy to Test Environment
+      - name: Deploy to EKS test (Blue-Green)
         run: |
           kubectl apply -f k8s/agent-service
           kubectl apply -f k8s/integration-service
           kubectl apply -f k8s/notification-service
           kubectl apply -f k8s/aggregator-service
 
-  deploy-prod:
+  deploy-to-prod:
     if: github.ref == 'refs/heads/prod'
-    needs: deploy-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -96,7 +97,7 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
 
-      - name: Deploy to Production Environment
+      - name: Deploy to EKS production (Blue-Green)
         run: |
           kubectl apply -f k8s/agent-service
           kubectl apply -f k8s/integration-service
