@@ -5,10 +5,7 @@ on:
     branches:
       - dev
       - test
-  pull_request:
-    branches:
-      - dev
-      - test
+      - prod
 
 env:
   AWS_REGION: us-east-1
@@ -16,6 +13,7 @@ env:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -59,8 +57,8 @@ jobs:
           push: true
           tags: ${{ env.ECR_ACCOUNT_URL }}/moon-aggregator-service:latest
 
-  deploy:
-    needs: build
+  deploy-test:
+    if: github.ref == 'refs/heads/test'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -81,7 +79,37 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
 
-      - name: Deploy to EKS (Blue/Green)
+      - name: Deploy to EKS (Test)
+        run: |
+          kubectl apply -f k8s/agent-service
+          kubectl apply -f k8s/integration-service
+          kubectl apply -f k8s/notification-service
+          kubectl apply -f k8s/aggregator-service
+          kubectl apply -f k8s/aggregator-service/cronjob.yaml
+
+  deploy-prod:
+    if: github.ref == 'refs/heads/prod'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name mooninsurance-ekscluster
+
+      - name: Deploy to EKS (Production)
         run: |
           kubectl apply -f k8s/agent-service
           kubectl apply -f k8s/integration-service
