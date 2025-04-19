@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - dev
+      - test
+      - prod
   pull_request:
     branches:
       - dev
+      - test
+      - prod
 
 env:
   AWS_REGION: us-east-1
@@ -30,6 +34,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build & push Agent Service image
+        if: github.ref == 'refs/heads/dev'
         uses: docker/build-push-action@v5
         with:
           context: ./agent_service
@@ -37,6 +42,7 @@ jobs:
           tags: ${{ env.ECR_ACCOUNT_URL }}/moon-agent-service:latest
 
       - name: Build & push Integration Service image
+        if: github.ref == 'refs/heads/dev'
         uses: docker/build-push-action@v5
         with:
           context: ./integration_service
@@ -44,6 +50,7 @@ jobs:
           tags: ${{ env.ECR_ACCOUNT_URL }}/moon-integration-service:latest
 
       - name: Build & push Notification Service image
+        if: github.ref == 'refs/heads/dev'
         uses: docker/build-push-action@v5
         with:
           context: ./notification_service
@@ -51,6 +58,7 @@ jobs:
           tags: ${{ env.ECR_ACCOUNT_URL }}/moon-notification-service:latest
 
       - name: Build & push Aggregator Service image
+        if: github.ref == 'refs/heads/dev'
         uses: docker/build-push-action@v5
         with:
           context: ./aggregator-service
