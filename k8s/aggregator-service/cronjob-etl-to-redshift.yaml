@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etl-to-redshift-cronjob
+  namespace: default
+spec:
+  schedule: "0 */6 * * *"  # Runs every 6 hours; adjust as needed
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: etl-runner
+              image: 457087769533.dkr.ecr.us-east-1.amazonaws.com/moon-aggregator-service:latest
+              command: ["python", "etl_to_redshift.py"]
+              env:
+                # RDS connection
+                - name: RDS_HOST
+                  value: "mooninsurance.ca7isqgecjpt.us-east-1.rds.amazonaws.com"
+                - name: RDS_PORT
+                  value: "3306"
+                - name: RDS_DB
+                  value: "mooninsurance_db"
+                - name: RDS_USER
+                  value: "admin"
+                - name: RDS_PASSWORD
+                  value: "Hsnmef_9575$"
+
+                # Redshift connection
+                - name: REDSHIFT_HOST
+                  value: "mooninsurance-wg.457087769533.us-east-1.redshift-serverless.amazonaws.com"
+                - name: REDSHIFT_PORT
+                  value: "5439"
+                - name: REDSHIFT_DB
+                  value: "mooninsurance-red_db"
+                - name: REDSHIFT_USER
+                  value: "admin"
+                - name: REDSHIFT_PASSWORD
+                  value: "Hsnmef_9575$"
+          restartPolicy: OnFailure
